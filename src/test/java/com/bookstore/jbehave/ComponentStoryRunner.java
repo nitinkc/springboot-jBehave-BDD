@@ -1,6 +1,6 @@
 package com.bookstore.jbehave;
 
-import com.bookstore.jbehave.steps.UserRegistrationSteps;
+import com.bookstore.jbehave.steps.ComponentTestSteps;
 import org.jbehave.core.junit.JUnitStories;
 import org.jbehave.core.configuration.Configuration;
 import org.jbehave.core.io.LoadFromClasspath;
@@ -11,7 +11,7 @@ import org.jbehave.core.steps.InstanceStepsFactory;
 import java.util.Arrays;
 import java.util.List;
 
-public class UserRegistrationStoryRunner extends JUnitStories {
+public class ComponentStoryRunner extends JUnitStories {
 
     @Override
     public Configuration configuration() {
@@ -23,12 +23,11 @@ public class UserRegistrationStoryRunner extends JUnitStories {
 
     @Override
     public InjectableStepsFactory stepsFactory() {
-        return new InstanceStepsFactory(configuration(), new UserRegistrationSteps());
+        return new InstanceStepsFactory(configuration(), new ComponentTestSteps());
     }
 
     @Override
     protected List<String> storyPaths() {
-        return Arrays.asList("com/bookstore/jbehave/stories/user_registration.story");
+        return Arrays.asList("com/bookstore/jbehave/stories/component_tests.story");
     }
 }
-
