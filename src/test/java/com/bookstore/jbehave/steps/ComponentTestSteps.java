@@ -10,14 +10,17 @@ import org.jbehave.core.annotations.*;
 import org.jbehave.core.model.ExamplesTable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Component
 @ContextConfiguration(classes = TestConfig.class)
 @SpringBootTest
 @Slf4j
@@ -35,6 +38,15 @@ public class ComponentTestSteps {
     private boolean repositoryTestsPassed = false;
     private boolean businessLogicTestsPassed = false;
 
+    private String uniqueSuffix() {
+        return "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+    }
+
+    // Returns a unique email for tests to avoid collisions between examples
+    private String uniqueEmail() {
+        return "validuser" + uniqueSuffix() + "@test.com";
+    }
+
     @Given("I have a complete user registration request: $userTable")
     public void givenCompleteUserRegistration(ExamplesTable userTable) {
         log.info("Creating complete user registration from table");
@@ -42,7 +54,7 @@ public class ComponentTestSteps {
         Map<String, String> userData = rows.get(0);
         
         testUser = UserRegistrationDto.builder()
-                .username(userData.get("username"))
+                .username(userData.get("username") + uniqueSuffix())
                 .password(userData.get("password"))
                 .email(userData.get("email"))
                 .firstName(userData.get("firstName"))
@@ -53,13 +65,37 @@ public class ComponentTestSteps {
         log.info("Created user: {}", testUser.getUsername());
     }
 
+    @BeforeScenario
+    public void setUp() {
+        log.info("Setting up ComponentTest scenario");
+        try {
+            userService.deleteAllUsersAndFlush();
+        } catch (Exception e) {
+            log.warn("Failed to clean users before scenario: {}", e.getMessage());
+        }
+    }
+
     @Given("I have a user registration request with username \"$username\"")
     public void givenUserWithUsername(String username) {
         log.info("Creating user with username: {}", username);
+        // Preserve the exact username when the example is intended to test validation
+        // (too short, too long or empty). Otherwise append a unique suffix to avoid
+        // collisions between examples.
+        String finalUsername = username;
+        if (username == null) {
+            finalUsername = null;
+        } else {
+            int len = username.length();
+            if (len >= 3 && len <= 50) {
+                // safe to append suffix for uniqueness
+                finalUsername = username + uniqueSuffix();
+            } // else keep as-is to trigger validation for short/long values
+        }
+
         testUser = UserRegistrationDto.builder()
-                .username(username)
+                .username(finalUsername)
                 .password("validpassword123")
-                .email("valid@test.com")
+                .email(uniqueEmail())
                 .build();
     }
 
@@ -67,8 +103,9 @@ public class ComponentTestSteps {
     public void givenUserWithEmail(String email) {
         log.info("Creating user with email: {}", email);
         testUser = UserRegistrationDto.builder()
-                .username("validuser")
+                .username("validuser" + uniqueSuffix())
                 .password("validpassword123")
+                // preserve provided email (may be empty or explicit); if empty, keep it to trigger validation
                 .email(email)
                 .build();
     }
@@ -77,9 +114,10 @@ public class ComponentTestSteps {
     public void givenUserWithPassword(String password) {
         log.info("Creating user with password length: {}", password.length());
         testUser = UserRegistrationDto.builder()
-                .username("validuser")
+                .username("validuser" + uniqueSuffix())
                 .password(password)
-                .email("valid@test.com")
+                // use unique email so password validation tests don't collide on email
+                .email(uniqueEmail())
                 .build();
     }
 
@@ -132,7 +170,7 @@ public class ComponentTestSteps {
     public void givenUserInDatabase() {
         log.info("Creating user in database for repository tests");
         testUser = UserRegistrationDto.builder()
-                .username("repo_test_user")
+                .username("repo_test_user" + uniqueSuffix())
                 .password("repotest123")
                 .email("repo@test.com")
                 .firstName("Repository")
@@ -205,12 +243,13 @@ public class ComponentTestSteps {
         
         try {
             // Test duplicate username rejection
+            String businessBase = "business_test" + uniqueSuffix();
             testUser = UserRegistrationDto.builder()
-                    .username("business_test")
-                    .password("business123")
-                    .email("business@test.com")
-                    .build();
-            
+                    .username(businessBase)
+                     .password("business123")
+                     .email("business@test.com")
+                     .build();
+
             String result1 = userService.registerUser(testUser);
             assertTrue(result1.contains("successfully"));
             
@@ -219,11 +258,11 @@ public class ComponentTestSteps {
             
             // Test duplicate email rejection
             UserRegistrationDto emailDuplicate = UserRegistrationDto.builder()
-                    .username("different_username")
-                    .password("business123")
-                    .email("business@test.com")
-                    .build();
-            
+                    .username("different_username" + uniqueSuffix())
+                     .password("business123")
+                     .email("business@test.com")
+                     .build();
+
             String result3 = userService.registerUser(emailDuplicate);
             assertTrue(result3.contains("Email already exists"));
             
@@ -257,5 +296,29 @@ public class ComponentTestSteps {
         log.info("Testing user deletion functionality");
         // This would be implemented with actual deletion operations
         assertTrue(businessLogicTestsPassed, "Business logic tests should pass");
+    }
+
+    @Then("the registration should $result")
+    public void thenTheRegistrationShouldResult(String result) {
+        log.info("Verifying registration result: {}", result);
+        if (result.equalsIgnoreCase("be successful")) {
+            assertTrue(validationResult.contains("successfully"),
+                "Expected registration to be successful, but got: " + validationResult);
+        } else if (result.equalsIgnoreCase("fail with validation error")) {
+            assertFalse(validationResult.contains("successfully"),
+                "Expected registration to fail with validation error, but got: " + validationResult);
+        } else {
+            fail("Unknown expected result: " + result);
+        }
+    }
+
+    @AfterScenario
+    public void tearDown() {
+        log.info("Cleaning up after ComponentTest scenario");
+        try {
+            userService.deleteAllUsersAndFlush();
+        } catch (Exception e) {
+            log.warn("Failed to clean users after scenario: {}", e.getMessage());
+        }
     }
 }

@@ -9,6 +9,7 @@ import org.jbehave.core.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import com.bookstore.jbehave.config.TestConfig;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = TestConfig.class)
 @SpringBootTest
 @TestPropertySource(properties = {"spring.profiles.active=test"})
+@Component
 @Slf4j
 public class SmokeTestSteps {
 
@@ -38,6 +40,17 @@ public class SmokeTestSteps {
     public void givenUserServiceIsRunning() {
         log.info("Verifying user service is running");
         assertNotNull(userService, "User service should be available");
+    }
+
+    @BeforeScenario
+    public void setUp() {
+        log.info("Setting up SmokeTest scenario");
+        // Ensure clean DB state before each scenario
+        try {
+            userService.deleteAllUsersAndFlush();
+        } catch (Exception e) {
+            log.warn("Failed to clean users before scenario: {}", e.getMessage());
+        }
     }
 
     @When("I check the health endpoint")

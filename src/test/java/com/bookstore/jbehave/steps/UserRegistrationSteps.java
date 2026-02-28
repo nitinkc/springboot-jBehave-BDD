@@ -9,6 +9,7 @@ import org.jbehave.core.annotations.*;
 import org.jbehave.core.model.ExamplesTable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Component
 @ContextConfiguration(classes = TestConfig.class)
 @SpringBootTest
 @Slf4j
@@ -36,6 +38,12 @@ public class UserRegistrationSteps {
         currentUser = null;
         registrationResult = null;
         retrievedUser = null;
+        // Ensure database is clean before each scenario to avoid state leakage
+        try {
+            userService.deleteAllUsersAndFlush();
+        } catch (Exception e) {
+            log.warn("Failed to clean users before scenario: {}", e.getMessage());
+        }
     }
 
     @Given("a user with username \"$username\" and password \"$password\"")
@@ -237,4 +245,3 @@ public class UserRegistrationSteps {
         // Cleanup is handled by @Transactional rollback in test configuration
     }
 }
-

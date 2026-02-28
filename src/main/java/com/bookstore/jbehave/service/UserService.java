@@ -10,8 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -21,9 +25,27 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ExternalUserService externalUserService;
+    private final Validator validator;
 
     public String registerUser(UserRegistrationDto registrationDto) {
         log.info("Registering user: {}", registrationDto.getUsername());
+
+        // Validate DTO using Jakarta Validator; return a validation message if violations present
+        try {
+            Set<ConstraintViolation<UserRegistrationDto>> violations = validator.validate(registrationDto);
+            if (!violations.isEmpty()) {
+                StringBuilder sb = new StringBuilder("Validation failed: ");
+                for (ConstraintViolation<UserRegistrationDto> v : violations) {
+                    sb.append(v.getPropertyPath()).append(" ").append(v.getMessage()).append("; ");
+                }
+                String msg = sb.toString();
+                log.warn(msg);
+                return "validation error: " + msg;
+            }
+        } catch (Exception e) {
+            log.warn("Validator unavailable or error during validation: {}", e.getMessage());
+            // fall through to normal processing
+        }
 
         // Check if username already exists
         if (userRepository.findByUsername(registrationDto.getUsername()).isPresent()) {
@@ -72,7 +94,7 @@ public class UserService {
                     }
                 }
                 user.setExternalUserId(externalUser.getId());
-                
+
                 User savedUser = userRepository.save(user);
                 log.info("User registered with external data, ID: {}", savedUser.getId());
                 return "User registered successfully with external data!";
@@ -114,7 +136,7 @@ public class UserService {
 
     public String updateUser(Long id, UserRegistrationDto updateDto) {
         log.info("Updating user with ID: {}", id);
-        
+
         Optional<User> userOptional = userRepository.findById(id);
         if (userOptional.isEmpty()) {
             log.warn("User not found for update, ID: {}", id);
@@ -122,7 +144,7 @@ public class UserService {
         }
 
         User user = userOptional.get();
-        
+
         // Check if new username is taken by another user
         if (!user.getUsername().equals(updateDto.getUsername())) {
             Optional<User> existingUser = userRepository.findByUsername(updateDto.getUsername());
@@ -152,7 +174,7 @@ public class UserService {
 
     public String deleteUser(Long id) {
         log.info("Deleting user with ID: {}", id);
-        
+
         if (!userRepository.existsById(id)) {
             log.warn("User not found for deletion, ID: {}", id);
             return "User not found";
@@ -168,6 +190,17 @@ public class UserService {
         long count = userRepository.count();
         log.debug("Total users count: {}", count);
         return count;
+    }
+
+    public void deleteAllUsers() {
+        log.info("Deleting all users (test cleanup)");
+        userRepository.deleteAll();
+    }
+
+    public void deleteAllUsersAndFlush() {
+        log.info("Deleting all users and flushing (test cleanup)");
+        userRepository.deleteAll();
+        userRepository.flush();
     }
 
     public Mono<Boolean> validateExternalUser(Long externalUserId) {

@@ -3,6 +3,13 @@ package com.bookstore.jbehave.controller;
 import com.bookstore.jbehave.dto.UserRegistrationDto;
 import com.bookstore.jbehave.model.User;
 import com.bookstore.jbehave.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +26,20 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
+@Tag(name = "User Management", description = "APIs for user registration, retrieval, update, and deletion")
 public class UserController {
 
     private final UserService userService;
 
+    @Operation(summary = "Register a new user", description = "Creates a new user account with the provided registration details")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User registered successfully",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "400", description = "Invalid registration data or username/email already exists",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string")))
+    })
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@Valid @RequestBody UserRegistrationDto registrationDto) {
         log.info("Received registration request for username: {}", registrationDto.getUsername());
@@ -42,8 +59,15 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Get user by ID", description = "Retrieves a user by their unique identifier")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<User> getUserById(
+            @Parameter(description = "User ID", required = true) @PathVariable Long id) {
         log.info("Fetching user with ID: {}", id);
         
         Optional<User> user = userService.findById(id);
@@ -55,6 +79,12 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Get all users", description = "Retrieves a list of all registered users")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of users retrieved successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         log.info("Fetching all users");
@@ -68,8 +98,15 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Get user by username", description = "Retrieves a user by their username")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @GetMapping("/username/{username}")
-    public ResponseEntity<User> getUserByUsername(@PathVariable String username) {
+    public ResponseEntity<User> getUserByUsername(
+            @Parameter(description = "Username to search for", required = true) @PathVariable String username) {
         log.info("Fetching user with username: {}", username);
         
         Optional<User> user = userService.findByUsername(username);
@@ -81,8 +118,15 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Get user by email", description = "Retrieves a user by their email address")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @GetMapping("/email/{email}")
-    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
+    public ResponseEntity<User> getUserByEmail(
+            @Parameter(description = "Email address to search for", required = true) @PathVariable String email) {
         log.info("Fetching user with email: {}", email);
         
         Optional<User> user = userService.findByEmail(email);
@@ -94,8 +138,20 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Update user", description = "Updates an existing user's information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User updated successfully",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "400", description = "Invalid update data",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string")))
+    })
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateUser(@PathVariable Long id, @Valid @RequestBody UserRegistrationDto updateDto) {
+    public ResponseEntity<String> updateUser(
+            @Parameter(description = "User ID", required = true) @PathVariable Long id,
+            @Valid @RequestBody UserRegistrationDto updateDto) {
         log.info("Updating user with ID: {}", id);
         
         try {
@@ -115,8 +171,17 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Delete user", description = "Deletes a user by their ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User deleted successfully",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error",
+                    content = @Content(mediaType = "text/plain", schema = @Schema(type = "string")))
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<String> deleteUser(
+            @Parameter(description = "User ID", required = true) @PathVariable Long id) {
         log.info("Deleting user with ID: {}", id);
         
         try {
@@ -134,6 +199,12 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Get user count", description = "Returns the total number of registered users")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User count retrieved successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(type = "integer", format = "int64"))),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/count")
     public ResponseEntity<Long> getUserCount() {
         log.info("Fetching user count");
@@ -147,8 +218,16 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Validate external user", description = "Validates if an external user exists in JSONPlaceholder API")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Validation result",
+                    content = @Content(mediaType = "application/json", schema = @Schema(type = "boolean"))),
+            @ApiResponse(responseCode = "503", description = "External service unavailable",
+                    content = @Content(mediaType = "application/json", schema = @Schema(type = "boolean")))
+    })
     @GetMapping("/validate-external/{externalUserId}")
-    public Mono<ResponseEntity<Boolean>> validateExternalUser(@PathVariable Long externalUserId) {
+    public Mono<ResponseEntity<Boolean>> validateExternalUser(
+            @Parameter(description = "External user ID from JSONPlaceholder", required = true) @PathVariable Long externalUserId) {
         log.info("Validating external user ID: {}", externalUserId);
         
         return userService.validateExternalUser(externalUserId)
@@ -156,6 +235,9 @@ public class UserController {
                 .onErrorReturn(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(false));
     }
 
+    @Operation(summary = "Health check", description = "Checks if the user service is healthy and running")
+    @ApiResponse(responseCode = "200", description = "Service is healthy",
+            content = @Content(mediaType = "text/plain", schema = @Schema(type = "string")))
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("User service is healthy");

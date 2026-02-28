@@ -7,46 +7,27 @@ import com.bookstore.jbehave.steps.UserRegistrationSteps;
 import lombok.extern.slf4j.Slf4j;
 import org.jbehave.core.configuration.Configuration;
 import org.jbehave.core.configuration.MostUsefulConfiguration;
-import org.jbehave.core.embedder.StoryControls;
 import org.jbehave.core.io.LoadFromClasspath;
 import org.jbehave.core.junit.JUnitStories;
 import org.jbehave.core.reporters.Format;
 import org.jbehave.core.reporters.StoryReporterBuilder;
 import org.jbehave.core.steps.InjectableStepsFactory;
 import org.jbehave.core.steps.InstanceStepsFactory;
-import org.jbehave.core.steps.PrintStreamStepMonitor;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * JBehave runner for component test stories.
+ * JBehave runner for integration tests stories.
  */
 @Slf4j
-public class ComponentStoryRunner extends JUnitStories {
-
-    public ComponentStoryRunner() {
-        try {
-            List<String> paths = storyPaths();
-            log.debug("storyPaths() => {}", paths);
-            ClassLoader cl = getClass().getClassLoader();
-            for (String p : paths) {
-                URL u = cl.getResource(p);
-                log.debug("classpath resource for '{}' => {}", p, u);
-            }
-        } catch (Exception e) {
-            log.warn("Error while checking story paths: {}", e.getMessage(), e);
-        }
-    }
+public class IntegrationStoryRunner extends JUnitStories {
 
     @Override
     public Configuration configuration() {
         return new MostUsefulConfiguration()
                 .useStoryLoader(new LoadFromClasspath(getClass()))
-                .useStepMonitor(new PrintStreamStepMonitor(System.out))
-                .useStoryControls(new StoryControls().doDryRun(false).doSkipScenariosAfterFailure(false))
                 .useStoryReporterBuilder(new StoryReporterBuilder()
                         .withDefaultFormats()
                         .withFormats(Format.CONSOLE, Format.TXT, Format.HTML));
@@ -80,12 +61,12 @@ public class ComponentStoryRunner extends JUnitStories {
             log.info("SmokeTestSteps bean not available - skipping. Reason: {}", e.getMessage());
         }
 
-        log.info("ComponentStoryRunner initialized with {} step bean(s)", stepBeans.size());
+        log.info("IntegrationStoryRunner initialized with {} step bean(s)", stepBeans.size());
         return new InstanceStepsFactory(configuration(), stepBeans.toArray());
     }
 
     @Override
     protected List<String> storyPaths() {
-        return List.of("com/bookstore/jbehave/stories/component_tests.story");
+        return List.of("com/bookstore/jbehave/stories/integration_tests.story");
     }
 }
