@@ -29,6 +29,7 @@ import java.util.Optional;
 @Tag(name = "User Management", description = "APIs for user registration, retrieval, update, and deletion")
 public class UserController {
 
+    public static final String SUCCESSFULLY = "successfully";
     private final UserService userService;
 
     @Operation(summary = "Register a new user", description = "Creates a new user account with the provided registration details")
@@ -47,7 +48,7 @@ public class UserController {
         try {
             String result = userService.registerUser(registrationDto);
             
-            if (result.contains("successfully")) {
+            if (result.contains(SUCCESSFULLY)) {
                 return ResponseEntity.status(HttpStatus.CREATED).body(result);
             } else {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
@@ -71,12 +72,8 @@ public class UserController {
         log.info("Fetching user with ID: {}", id);
         
         Optional<User> user = userService.findById(id);
-        
-        if (user.isPresent()) {
-            return ResponseEntity.ok(user.get());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+
+      return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "Get all users", description = "Retrieves a list of all registered users")
@@ -110,12 +107,8 @@ public class UserController {
         log.info("Fetching user with username: {}", username);
         
         Optional<User> user = userService.findByUsername(username);
-        
-        if (user.isPresent()) {
-            return ResponseEntity.ok(user.get());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+
+      return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "Get user by email", description = "Retrieves a user by their email address")
@@ -130,12 +123,8 @@ public class UserController {
         log.info("Fetching user with email: {}", email);
         
         Optional<User> user = userService.findByEmail(email);
-        
-        if (user.isPresent()) {
-            return ResponseEntity.ok(user.get());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+
+      return user.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "Update user", description = "Updates an existing user's information")
@@ -157,7 +146,7 @@ public class UserController {
         try {
             String result = userService.updateUser(id, updateDto);
             
-            if (result.contains("successfully")) {
+            if (result.contains(SUCCESSFULLY)) {
                 return ResponseEntity.ok(result);
             } else if (result.contains("not found")) {
                 return ResponseEntity.notFound().build();
@@ -187,7 +176,7 @@ public class UserController {
         try {
             String result = userService.deleteUser(id);
             
-            if (result.contains("successfully")) {
+            if (result.contains(SUCCESSFULLY)) {
                 return ResponseEntity.ok(result);
             } else {
                 return ResponseEntity.notFound().build();
