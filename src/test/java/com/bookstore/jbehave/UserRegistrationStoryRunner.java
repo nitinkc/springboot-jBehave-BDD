@@ -10,7 +10,6 @@ import org.jbehave.core.steps.InjectableStepsFactory;
 import org.jbehave.core.steps.InstanceStepsFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class UserRegistrationStoryRunner extends JUnitStories {
@@ -37,6 +36,6 @@ public class UserRegistrationStoryRunner extends JUnitStories {
 
     @Override
     protected List<String> storyPaths() {
-        return Arrays.asList("com/bookstore/jbehave/stories/user_registration.story");
+        return List.of("com/bookstore/jbehave/stories/user_registration.story");
     }
 }

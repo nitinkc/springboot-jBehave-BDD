@@ -105,7 +105,6 @@ public class UserService {
         } catch (Exception e) {
             log.error("Error fetching external user data: {}", e.getMessage());
             // Fallback to regular registration
-            User savedUser = userRepository.save(user);
             return "User registered successfully (external data unavailable)!";
         }
     }
