@@ -2,6 +2,7 @@ package com.bookstore.jbehave;
 
 import com.bookstore.jbehave.config.TestConfig;
 import com.bookstore.jbehave.steps.ComponentTestSteps;
+import com.bookstore.jbehave.steps.RegressionTestSteps;
 import com.bookstore.jbehave.steps.SmokeTestSteps;
 import com.bookstore.jbehave.steps.UserRegistrationSteps;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,12 @@ public class RegressionStoryRunner extends JUnitStories {
 
         List<Object> stepBeans = new ArrayList<>();
 
+        try {
+            stepBeans.add(ctx.getBean(RegressionTestSteps.class));
+            log.debug("Successfully loaded RegressionTestSteps bean");
+        } catch (Exception e) {
+            log.info("RegressionTestSteps bean not available - skipping. Reason: {}", e.getMessage());
+        }
         try {
             stepBeans.add(ctx.getBean(ComponentTestSteps.class));
             log.debug("Successfully loaded ComponentTestSteps bean");

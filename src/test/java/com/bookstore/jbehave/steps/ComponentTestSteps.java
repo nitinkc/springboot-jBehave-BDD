@@ -51,7 +51,7 @@ public class ComponentTestSteps {
     public void givenCompleteUserRegistration(ExamplesTable userTable) {
         log.info("Creating complete user registration from table");
         List<Map<String, String>> rows = userTable.getRows();
-        Map<String, String> userData = rows.get(0);
+        Map<String, String> userData = rows.getFirst();
         
         testUser = UserRegistrationDto.builder()
                 .username(userData.get("username") + uniqueSuffix())

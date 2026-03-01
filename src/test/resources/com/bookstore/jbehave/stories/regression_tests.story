@@ -54,13 +54,13 @@ And audit timestamps should be updated correctly
 Scenario: API endpoint comprehensive testing
 Given the user service is running
 When I test all REST endpoints
-Then GET /api/users should return all users
-And GET /api/users/{id} should return specific user
-And POST /api/users/register should create new user
-And PUT /api/users/{id} should update user
-And DELETE /api/users/{id} should delete user
-And GET /api/users/count should return user count
-And GET /api/users/health should return healthy status
+Then GET users endpoint should return all users
+And GET user by ID endpoint should return specific user
+And POST register endpoint should create new user
+And PUT update endpoint should update user
+And DELETE endpoint should delete user
+And GET count endpoint should return user count
+And GET health endpoint should return healthy status
 
 Scenario: Error handling and edge cases
 Given I have various edge case scenarios
@@ -69,3 +69,13 @@ Then invalid user ID should return 404
 And malformed requests should return 400
 And system should handle database errors gracefully
 And logging should capture all important events
+
+Scenario: File-based batch user registration testing
+Meta:
+@csv_test
+@file_based
+Given I load user registration test data from "testdata/user_registration_requests.csv"
+And I load expected responses from "testdata/user_registration_expected_responses.csv"
+When I execute all registration requests from the file
+Then the results should match the expected responses
+And I should have processed 5 records

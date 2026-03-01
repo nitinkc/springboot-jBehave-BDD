@@ -1,0 +1,6 @@
+username,expectedStatus,expectedMessage
+csvuser1,SUCCESS,User registered successfully
+csvuser2,SUCCESS,User registered successfully
+csvuser3,VALIDATION_ERROR,Password must be at least 8 characters
+csvuser4,VALIDATION_ERROR,Email should be valid
+x,VALIDATION_ERROR,Username must be between 3 and 50 characters

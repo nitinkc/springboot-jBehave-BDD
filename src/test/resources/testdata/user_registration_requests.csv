@@ -1,0 +1,6 @@
+username,password,email,firstName,lastName,expectedResult
+csvuser1,password123,csvuser1@test.com,John,Doe,success
+csvuser2,password456,csvuser2@test.com,Jane,Smith,success
+csvuser3,pass,csvuser3@test.com,Invalid,Password,validation_error
+csvuser4,password789,invalid-email,Invalid,Email,validation_error
+x,password123,shortuser@test.com,Short,Username,validation_error
