@@ -164,7 +164,11 @@ jobs:
             cp -R "$dir"/* "public/$suite"/
           done
 
-          cat > public/index.html <<'HTML'
+          build_time_utc=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          build_time_seattle=$(TZ=America/Los_Angeles date +"%Y-%m-%d %H:%M:%S %Z")
+          build_time_bangalore=$(TZ=Asia/Kolkata date +"%Y-%m-%d %H:%M:%S %Z")
+
+          cat > public/index.html <<HTML
           <!DOCTYPE html>
           <html lang="en">
             <head>
@@ -174,6 +178,9 @@ jobs:
             </head>
             <body>
               <h1>jBehave Reports</h1>
+              <p>Built (UTC): ${build_time_utc}</p>
+              <p>Built (Seattle): ${build_time_seattle}</p>
+              <p>Built (Bangalore): ${build_time_bangalore}</p>
               <ul>
                 <li><a href="smoke/view/index.html">Smoke</a></li>
                 <li><a href="component/view/index.html">Component</a></li>
