@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 jobs:
   junit:
@@ -29,6 +31,15 @@ jobs:
       - name: Run JUnit tests
         run: ./mvnw -B -Dtest='*Test,*Tests,*TestCase' test
 
+      - name: Upload JUnit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-reports
+          path: |
+            target/surefire-reports/**
+            target/failsafe-reports/**
+
   smoke:
     runs-on: ubuntu-latest
     steps:
@@ -47,6 +58,13 @@ jobs:
 
       - name: Run smoke stories
         run: ./mvnw -B -Dtest=SmokeStoryRunner test
+
+      - name: Upload smoke jBehave reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-jbehave-reports
+          path: target/jbehave/**
 
   component:
     runs-on: ubuntu-latest
@@ -67,6 +85,13 @@ jobs:
       - name: Run component stories
         run: ./mvnw -B -Dtest=ComponentStoryRunner test
 
+      - name: Upload component jBehave reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-jbehave-reports
+          path: target/jbehave/**
+
   regression:
     runs-on: ubuntu-latest
     steps:
@@ -86,6 +111,13 @@ jobs:
       - name: Run regression stories
         run: ./mvnw -B -Dtest=RegressionStoryRunner test
 
+      - name: Upload regression jBehave reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-jbehave-reports
+          path: target/jbehave/**
+
   integration:
     runs-on: ubuntu-latest
     steps:
@@ -104,3 +136,67 @@ jobs:
 
       - name: Run integration stories
         run: ./mvnw -B -Dtest=IntegrationStoryRunner test
+
+      - name: Upload integration jBehave reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-jbehave-reports
+          path: target/jbehave/**
+
+  combine-reports:
+    runs-on: ubuntu-latest
+    needs: [junit, smoke, component, regression, integration]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create combined report bundle
+        run: |
+          mkdir -p combined
+          cp -R artifacts/* combined/
+
+      - name: Upload combined reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-test-reports
+          path: combined/**
+
+  publish-reports:
+    runs-on: ubuntu-latest
+    needs: [smoke, component, regression, integration]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download jBehave artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare Pages content
+        run: |
+          mkdir -p public
+          for dir in artifacts/*-jbehave-reports; do
+            name=$(basename "$dir")
+            suite=${name%-jbehave-reports}
+            mkdir -p "public/$suite"
+            cp -R "$dir"/* "public/$suite"/
+          done
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy-pages:
+    runs-on: ubuntu-latest
+    needs: publish-reports
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
